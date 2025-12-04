@@ -13,24 +13,44 @@ export interface ClickEntry {
   textContent: string;
 }
 
+export interface NavigationEntry {
+  timestamp: number;
+  url: string;
+  title: string;
+}
+
 // Storage limits
 export const MAX_STORED_CLICKS = 50;
 export const MAX_STORED_LOGS = 50_000;
+export const MAX_STORED_NAVIGATIONS = 50;
 export const DEFAULT_LOGS_RETURN = 10;
 
-// Storage functions with limit enforcement
-export function addLog(logs: LogEntry[], log: LogEntry): void {
-  logs.push(log);
-  if (logs.length > MAX_STORED_LOGS) {
-    logs.splice(0, logs.length - MAX_STORED_LOGS);
+// Generic capped array utilities
+function pushCapped<T>(arr: T[], item: T, max: number): void {
+  arr.push(item);
+  if (arr.length > max) {
+    arr.splice(0, arr.length - max);
   }
 }
 
-export function addClick(clicks: ClickEntry[], click: ClickEntry): void {
-  clicks.unshift(click); // Most recent first
-  if (clicks.length > MAX_STORED_CLICKS) {
-    clicks.splice(MAX_STORED_CLICKS);
+function unshiftCapped<T>(arr: T[], item: T, max: number): void {
+  arr.unshift(item);
+  if (arr.length > max) {
+    arr.splice(max);
   }
+}
+
+// Storage functions with limit enforcement
+export function addLog(logs: LogEntry[], log: LogEntry): void {
+  pushCapped(logs, log, MAX_STORED_LOGS);
+}
+
+export function addClick(clicks: ClickEntry[], click: ClickEntry): void {
+  unshiftCapped(clicks, click, MAX_STORED_CLICKS);
+}
+
+export function addNavigation(navs: NavigationEntry[], nav: NavigationEntry): void {
+  unshiftCapped(navs, nav, MAX_STORED_NAVIGATIONS);
 }
 
 // Processing functions for tool handlers

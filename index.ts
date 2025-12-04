@@ -5,8 +5,10 @@ import { z } from "zod";
 import {
   type LogEntry,
   type ClickEntry,
+  type NavigationEntry,
   addLog,
   addClick,
+  addNavigation,
   processLogs,
   processClicks,
 } from "./lib";
@@ -14,6 +16,7 @@ import {
 // Storage for captured events
 const logs: LogEntry[] = [];
 const clicks: ClickEntry[] = [];
+const navigations: NavigationEntry[] = [];
 
 // Playwright instances
 let browser: Browser;
@@ -99,6 +102,14 @@ function setupLogCapture(p: Page) {
       timestamp: Date.now(),
       type: msg.type(),
       text: msg.text(),
+    });
+  });
+
+  p.on("pageerror", (error) => {
+    addLog(logs, {
+      timestamp: Date.now(),
+      type: "error",
+      text: `[Uncaught] ${error.message}`,
     });
   });
 }
@@ -241,6 +252,53 @@ server.tool(
   }
 );
 
+// Register get_page_info tool
+server.tool(
+  "get_page_info",
+  "Returns current page URL and title",
+  {},
+  async () => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              url: page.url(),
+              title: await page.title(),
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+// Register get_navigations tool
+server.tool(
+  "get_navigations",
+  "Returns navigation history (most recent first)",
+  {
+    head: z
+      .number()
+      .optional()
+      .describe("Return only the first N navigations"),
+  },
+  async ({ head }) => {
+    const result = head ? navigations.slice(0, head) : navigations;
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
 // Register browser-helper prompt
 server.prompt(
   "browser-helper",
@@ -275,6 +333,16 @@ Retrieves user click events with CSS selectors and DOM context.
 - \`get_clicks({ parent_depth: 2 })\` - Include 2 parent elements for context
 - \`get_clicks({ child_depth: 1 })\` - Include immediate children of clicked elements
 
+### get_page_info
+Returns the current page URL and title.
+
+### get_navigations
+Returns navigation history (most recent first).
+
+**Examples:**
+- \`get_navigations()\` - Returns all navigation history
+- \`get_navigations({ head: 5 })\` - Returns the 5 most recent navigations
+
 ## Typical Workflow
 
 1. User navigates to a page in the browser window
@@ -304,6 +372,17 @@ async function main() {
   // Setup captures
   setupLogCapture(page);
   await setupClickCapture(page);
+
+  // Track navigation history
+  page.on("framenavigated", async (frame) => {
+    if (frame === page.mainFrame()) {
+      addNavigation(navigations, {
+        timestamp: Date.now(),
+        url: frame.url(),
+        title: await page.title().catch(() => ""),
+      });
+    }
+  });
 
   // Navigate to URL if provided
   if (startUrl) {
