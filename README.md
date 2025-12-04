@@ -60,7 +60,13 @@ Retrieves captured click events from user interactions. Returns a list with the 
 | `parent_depth` | `number` | No | Include N parent nodes above clicked element |
 | `child_depth` | `number` | No | Include N levels of child nodes below clicked element |
 
-**Returns:** Array of click events containing element selectors, tag names, attributes, and optionally the surrounding DOM context based on parent/child depth.
+**Returns:** Array of click events containing:
+- `selector` - CSS selector for the clicked element
+- `tagName` - HTML tag name
+- `attributes` - Element attributes (excluding class/style)
+- `textContent` - Text content of the element (truncated to 200 chars)
+- `inputValue` - Value of input/textarea/select elements, or contenteditable content (truncated to 500 chars). Only present for form elements.
+- `parents` / `children` - Optional DOM context if `parent_depth` or `child_depth` is specified
 
 ---
 

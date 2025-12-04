@@ -71,16 +71,60 @@ const clickCaptureScript = `
     return attrs;
   }
 
+  function getInputValue(el) {
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea') {
+      return (el.value || '').slice(0, 500);
+    }
+    if (tag === 'select') {
+      return el.options[el.selectedIndex]?.text || '';
+    }
+    // Check for contenteditable
+    if (el.isContentEditable) {
+      return (el.textContent || '').trim().slice(0, 500);
+    }
+    // Check for nested input in light DOM
+    let input = el.querySelector('input, textarea');
+    if (input) {
+      return (input.value || '').slice(0, 500);
+    }
+    // Check shadow DOM for inputs
+    if (el.shadowRoot) {
+      input = el.shadowRoot.querySelector('input, textarea');
+      if (input) {
+        return (input.value || '').slice(0, 500);
+      }
+    }
+    // Recursively check children with shadow roots
+    const childrenWithShadow = el.querySelectorAll('*');
+    for (const child of childrenWithShadow) {
+      if (child.shadowRoot) {
+        input = child.shadowRoot.querySelector('input, textarea');
+        if (input) {
+          return (input.value || '').slice(0, 500);
+        }
+      }
+    }
+    return undefined;
+  }
+
   document.addEventListener('click', (e) => {
     const el = e.target;
     if (!el || el.nodeType !== Node.ELEMENT_NODE) return;
 
-    window.__reportClick({
+    const clickData = {
       selector: buildSelector(el),
       tagName: el.tagName.toLowerCase(),
       attributes: getAttributes(el),
       textContent: (el.textContent || '').trim().slice(0, 200)
-    });
+    };
+
+    const inputValue = getInputValue(el);
+    if (inputValue !== undefined) {
+      clickData.inputValue = inputValue;
+    }
+
+    window.__reportClick(clickData);
   }, true);
 `;
 

@@ -11,6 +11,7 @@ export interface ClickEntry {
   tagName: string;
   attributes: Record<string, string>;
   textContent: string;
+  inputValue?: string;
 }
 
 export interface NavigationEntry {
