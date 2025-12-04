@@ -32,6 +32,11 @@ Run directly with Bun:
 bun run index.ts [optional-url]
 ```
 
+### Adding to Claude Code
+```bash
+claude mcp add browser-helper -- bun run /path/to/browser-helper/index.ts [optional-url]
+```
+
 ## MCP Tools
 
 ### `get_logs`
