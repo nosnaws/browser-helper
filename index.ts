@@ -241,6 +241,53 @@ server.tool(
   }
 );
 
+// Register browser-helper prompt
+server.prompt(
+  "browser-helper",
+  "Explains how the browser helper works and provides usage examples",
+  async () => {
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `# Browser Helper MCP Server
+
+This MCP server opens a persistent Chromium browser window and captures user interactions. You can observe what the user clicks and what the page logs to the console.
+
+## Available Tools
+
+### get_logs
+Retrieves console logs from the browser page.
+
+**Examples:**
+- \`get_logs()\` - Returns the last 10 console logs
+- \`get_logs({ tail: 5 })\` - Returns the 5 most recent logs
+- \`get_logs({ head: 20 })\` - Returns the first 20 logs
+
+### get_clicks
+Retrieves user click events with CSS selectors and DOM context.
+
+**Examples:**
+- \`get_clicks()\` - Returns recent clicks (most recent first)
+- \`get_clicks({ head: 3 })\` - Returns the 3 most recent clicks
+- \`get_clicks({ parent_depth: 2 })\` - Include 2 parent elements for context
+- \`get_clicks({ child_depth: 1 })\` - Include immediate children of clicked elements
+
+## Typical Workflow
+
+1. User navigates to a page in the browser window
+2. User interacts with the page (clicks buttons, fills forms, etc.)
+3. Use \`get_clicks()\` to see what elements they clicked
+4. Use \`get_logs()\` to check for errors or debug output`,
+          },
+        },
+      ],
+    };
+  }
+);
+
 // Main function
 async function main() {
   // Parse optional URL from command line

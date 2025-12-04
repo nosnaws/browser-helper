@@ -3,9 +3,6 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
-  "scripts": {
-    "build": "bun build --compile index.ts --outfile browser-helper --external electron"
-  },
   "devDependencies": {
     "@types/bun": "latest"
   },
