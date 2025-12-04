@@ -9,6 +9,8 @@ A Model Context Protocol (MCP) server that provides browser logging and click ca
 - [MCP Tools](#mcp-tools)
   - [get_logs](#get_logs)
   - [get_clicks](#get_clicks)
+  - [get_page_info](#get_page_info)
+  - [get_navigations](#get_navigations)
 
 ## Installation
 
@@ -34,7 +36,7 @@ bun run index.ts [optional-url]
 
 ### `get_logs`
 
-Retrieves console logs from the browser.
+Retrieves console logs and uncaught JavaScript errors from the browser.
 
 **Arguments:**
 | Name | Type | Required | Description |
@@ -59,3 +61,26 @@ Retrieves captured click events from user interactions. Returns a list with the 
 | `child_depth` | `number` | No | Include N levels of child nodes below clicked element |
 
 **Returns:** Array of click events containing element selectors, tag names, attributes, and optionally the surrounding DOM context based on parent/child depth.
+
+---
+
+### `get_page_info`
+
+Returns the current page URL and title.
+
+**Arguments:** None
+
+**Returns:** Object with `url` and `title` properties.
+
+---
+
+### `get_navigations`
+
+Returns navigation history with the most recent navigation first.
+
+**Arguments:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `head` | `number` | No | Return only the first N navigations (most recent) |
+
+**Returns:** Array of navigation events containing `timestamp`, `url`, and `title`.
