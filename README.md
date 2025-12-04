@@ -2,7 +2,20 @@
 
 A Model Context Protocol (MCP) server that provides browser logging and click capture capabilities. Uses Playwright to open a persistent browser window that users can interact with while the MCP server captures events.
 
+## Getting Started
+
+1. Download the latest executable from the [Releases page](../../releases)
+2. Install Chromium for Playwright:
+   ```bash
+   bunx playwright install chromium
+   ```
+3. Run the executable:
+   ```bash
+   ./browser-helper [optional-url]
+   ```
+
 ## Installation
+You will need [Bun](https://bun.sh/) installed to run this project.
 
 ```bash
 bun install
@@ -10,8 +23,26 @@ bun install
 
 ## Usage
 
+Run directly with Bun:
 ```bash
-bun run index.ts
+bun run index.ts [optional-url]
+```
+
+## Building
+
+Build a standalone executable:
+```bash
+bun run build
+```
+
+This creates a standalone `browser-helper` executable. Run it with:
+```bash
+./browser-helper [optional-url]
+```
+
+Note: Playwright browsers must be installed on the system:
+```bash
+bunx playwright install chromium
 ```
 
 ## MCP Tools
