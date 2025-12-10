@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { chromium, type Page, type Browser } from "playwright";
+import { chromium, type Page, type BrowserContext } from "playwright";
+import { homedir } from "os";
+import { join } from "path";
 import { z } from "zod";
 import {
   type LogEntry,
@@ -13,13 +15,16 @@ import {
   processClicks,
 } from "./lib";
 
+// User data directory for persistent browser context
+const USER_DATA_DIR = join(homedir(), ".browser-helper", "user-data");
+
 // Storage for captured events
 const logs: LogEntry[] = [];
 const clicks: ClickEntry[] = [];
 const navigations: NavigationEntry[] = [];
 
 // Playwright instances
-let browser: Browser;
+let browser: BrowserContext;
 let page: Page;
 
 // Create MCP server
@@ -405,13 +410,14 @@ async function main() {
   // Parse optional URL from command line
   const startUrl = process.argv[2];
 
-  // Launch browser
-  browser = await chromium.launch({
+  // Launch persistent browser context (retains cookies, localStorage, etc.)
+  browser = await chromium.launchPersistentContext(USER_DATA_DIR, {
     headless: false,
+    viewport: null, // Disable viewport emulation - browser matches actual window size
   });
 
-  // Create page
-  page = await browser.newPage();
+  // Get the default page or create one
+  page = browser.pages()[0] || await browser.newPage();
 
   // Setup captures
   setupLogCapture(page);
@@ -450,11 +456,18 @@ async function main() {
 
   // Log to stderr (stdout is used for MCP)
   console.error("[browser-helper] MCP server running");
+  console.error(`[browser-helper] User data: ${USER_DATA_DIR}`);
   if (startUrl) {
     console.error(`[browser-helper] Navigated to: ${startUrl}`);
   }
 
-  // Handle shutdown
+  // Handle browser disconnection (user closed browser window)
+  browser.on("close", () => {
+    console.error("[browser-helper] Browser closed, exiting...");
+    process.exit(0);
+  });
+
+  // Handle shutdown signals
   process.on("SIGINT", async () => {
     console.error("[browser-helper] Shutting down...");
     await browser.close();
@@ -466,9 +479,23 @@ async function main() {
     await browser.close();
     process.exit(0);
   });
+
+  // Handle uncaught errors
+  process.on("uncaughtException", async (error) => {
+    console.error("[browser-helper] Uncaught exception:", error);
+    if (browser) await browser.close().catch(() => {});
+    process.exit(1);
+  });
+
+  process.on("unhandledRejection", async (reason) => {
+    console.error("[browser-helper] Unhandled rejection:", reason);
+    if (browser) await browser.close().catch(() => {});
+    process.exit(1);
+  });
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error("[browser-helper] Fatal error:", error);
+  if (browser) await browser.close().catch(() => {});
   process.exit(1);
 });
